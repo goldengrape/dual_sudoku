@@ -1,8 +1,9 @@
+import random 
 Color=["Red","Blue"]
 
 class Piece:
     def __init__(self, value):
-        self.value = value
+        self.value = value%9 if value%9!=0 else 9
         self.color = None 
         self.row = -1
         self.col = -1
@@ -19,12 +20,12 @@ class Chess:
     def __init__(self, row, col):
         self.row = row
         self.col = col
-        self.value = 0
-        self.candidates = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+        self.value = None 
+        self.candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.color = None 
         self.accept_for_piece= True  
     def check(self, piece):
-        if piece.value in self.candidates:
+        if int(piece.value) in self.candidates:
             self.accept_for_piece=True 
             return True
         else:
@@ -36,9 +37,16 @@ class Chess:
             self.color = piece.color
             piece.set_position(self.row, self.col)
             self.candidates = {}
+            self.accpeted=True 
+            return True 
+        else:
+            self.accpeted=False
+            return False 
+        
+
     def remove(self, piece):
-        if piece.value in self.candidates:
-            self.candidates.remove(piece.value)
+        if int(piece.value) in self.candidates:
+            self.candidates.remove(int(piece.value))
 
 class Line:
     def __init__(self, ID, chesses):
@@ -81,13 +89,37 @@ class Board:
         self.cols = [Line(col, self.chesses[col:col+81:9]) for col in range(9)]
         self.block = [[Block(i,j,[self.chesses[i*27+j*3+k*9+l] for k in range(3) for l in range(3)]) for j in range(3)] for i in range(3)]
     def put(self, piece, row, col):
-        for chess in self.chesses:
-            if chess.row == row and chess.col == col:
-                chess.put(piece)    
-        self.chesses[row*9+col].put(piece)
-        self.rows[row].update(piece)
-        self.cols[col].update(piece)
-        self.block[row//3][col//3].update(piece)
+        # for chess in self.chesses:
+        #     if chess.row == row and chess.col == col:
+        #         chess.put(piece)    
+        isPut=self.chesses[row*9+col].put(piece)
+        print(f"isPut: {isPut}")
+        if isPut:
+            print(f"update row {row} col {col}")
+            print(f"update block {row//3}, {col//3}")
+            self.rows[row].update(piece)
+            self.cols[col].update(piece)
+            self.block[row//3][col//3].update(piece)
     def hover(self, piece):
         for chess in self.chesses:
             chess.accept_for_piece(piece)
+
+    def __repr__(self):
+        # print chess value on chess's position
+        # in chess color 
+
+        show_string=""
+        for i in range(9):
+            for j in range(9):
+                show_string+=str(self.chesses[i*9+j].value)
+            show_string+="\n" 
+        return show_string
+
+def dispancer(pieces, color):
+    # 从pieces中随机取出一个piece
+    piece=pieces.pop(random.randint(0,len(pieces)-1))
+    # 为piece分配颜色
+    piece.color=color
+    # 交换颜色
+    color=Color[0] if color==Color[1] else Color[1]
+    return piece, color
