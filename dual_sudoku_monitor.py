@@ -6,6 +6,10 @@ global board
 board=Board()
 global current_piece
 current_piece=Piece(0)
+global chess_width,chess_height,spacing
+chess_width=40
+chess_height=40
+spacing=5
 
 class Chess_Container(ft.DragTarget):
     def __init__(self,board,i):
@@ -14,8 +18,10 @@ class Chess_Container(ft.DragTarget):
             content=ft.ElevatedButton(
                 text=board.chesses[i].value,
                 bgcolor=ft.colors.WHITE,
-                width=50,height=50),
-            on_accept=self.drug_accept)
+                width=chess_width,height=chess_height),
+            on_accept=self.drug_accept,
+            # on_will_accept=self.drug_hover,
+            )
         # self.chess=board.chesses[i]
         self.index=i
         self.row=board.chesses[i].row
@@ -28,47 +34,82 @@ class Chess_Container(ft.DragTarget):
     @chess.setter
     def chess(self,value):
         board.chesses[self.index]=value
-
     def drug_accept(self,e):
-        print()
-        print(f"row:{self.row},col:{self.col}")    
-        print(f"before candidates:{board.chesses[self.index].candidates}")   
-        # print(f"value {current_piece.value} in cadiates {board.chesses[self.index].candidates}:{current_piece.value in board.chesses[self.index].candidates}")
         board.put(current_piece,self.row,self.col) 
-        print(f"after candidates:{board.chesses[self.index].candidates}")
+        
+        self._update()
+        update_block()
+        # self.show_block_color()
+    def _update(self):
         self.content.text=self.chess.value
         self.content.bgcolor= self.chess.color 
         self.update()
-        block_container[self.blockID].content.bgcolor=board.block[self.row][self.col].color
-        block_container[self.blockID].update()
+        pass 
+         
         
-def red_button_click(e):
+
+class Block_Container(ft.Container):
+    def __init__(self, board, chess_container, ID):
+        chess_container_list=[chess_container[c] for c in chess_index_in_block[ID]]
+        super().__init__(
+            content=ft.Row(
+            width=(chess_width+spacing)*4,
+            height=(chess_height+spacing*2)*3,
+            controls= chess_container_list,
+            wrap=True,
+            run_spacing=spacing,
+            # alignment="center",
+            ),
+            width=chess_width*3+spacing*5,
+            height=chess_width*3+spacing*3,
+            # alignment=ft.alignment.CENTER, 
+            )
+        self.ID=ID
+        self.board=board 
+        self.row=ID//3
+        self.col=ID%3
+        self.block=board.block[self.row][self.col]
+        self.chess_container_list=chess_container_list
+        self.border = ft.border.all(2, ft.colors.BLACK)
+        # self.bgcolor=board.block[self.row][self.col].Color
+        # self.bgcolor="Green" 
+        # self._update()
+    def _update(self):
+        # self.bgcolor=self.block.color
+        self.border = ft.border.all(2, self.block.color)
+        print(self.block.color)
+        self.update()
+        pass
+
+def click_button(e,color):
     value=int(input_text.value) % 9
-    print("value",value)
     number_card.content.text=str(value)
-    number_card.content.color=ft.colors.RED
+    number_card.content.bgcolor=color
     number_card.update()
     current_piece.value=value
-    current_piece.color="Red"
+    current_piece.color=color
+
+def red_button_click(e):
+    return click_button(e,"Red")
 
 def blue_button_click(e):
-    value=int(input_text.value) % 9
-    number_card.content.text=str(value)
-    number_card.content.color=ft.colors.BLUE
-    number_card.update()
-    current_piece.value=value
-    current_piece.color="Blue"
+    return click_button(e,"Blue")
 
 
 
-input_text=ft.TextField(width=50,height=50)
+input_text=ft.TextField(width=chess_width,height=chess_height,
+                    text_align="center",
+                    )
 red_button=ft.ElevatedButton(
-            width=50,height=50,
-            text="Red",icon="add",color=ft.colors.RED,
-            on_click=red_button_click)
+            width=chess_width,
+            height=chess_height,
+            text="Red",icon="add",bgcolor=ft.colors.RED,
+            on_click=red_button_click,
+            )
 blue_button=ft.ElevatedButton(
-            width=50,height=50,
-            text="Blue",icon="add",color=ft.colors.BLUE,
+            width=chess_width,
+            height=chess_height,
+            text="Blue",icon="add",bgcolor=ft.colors.BLUE,
             on_click=blue_button_click)
 
 
@@ -76,11 +117,13 @@ blue_button=ft.ElevatedButton(
 number_card=ft.Draggable(
             group="chess",
             content=ft.ElevatedButton(
-            width=50,height=50,
+            width=chess_width,
+            height=chess_height,
             text=input_text.value))
 input_group=ft.Column(controls=[
                 ft.Row(controls=[input_text,red_button,blue_button],), 
                 number_card])
+
 chess_container=[Chess_Container(board,i) for i in range(81)]
 chess_index_in_block={
     0:[0,1,2,9,10,11,18,19,20],
@@ -95,27 +138,38 @@ chess_index_in_block={
 }
    
 
-block_container=[
-        ft.Row(width=(50+10)*3,
-                height=(50+10)*3,
-                    controls= [chess_container[c] for c in chess_index_in_block[i]],
-                    wrap=True,
-                    run_spacing=10,) 
-        for i in range(9)]
+
+block_container=[Block_Container(board, chess_container,i) for i in range(9)]
+global board_container
 board_container=ft.Row(
-        width=((50+10)*3+10)*3 ,
+        width=block_container[0].width*4 ,
         # controls=chess_container,
         controls=block_container,
         wrap=True,
-        run_spacing=10,
+        run_spacing=spacing*1,
+        alignment="center",
         )
 
+def update_block():
+    for block in block_container:
+        print(block.ID)
+        block._update()
+
 def main(page: ft.Page):
+    # page.width=800
+    page.horizontal_alignment="center"
     def drag_accept(e):
         print("OK")
         page.update()
 
     page.add(
         ft.Row(
-        controls=[board_container,input_group]))
-ft.app(target=main, view=ft.WEB_BROWSER)
+            controls=[input_text,red_button,blue_button],
+            alignment="center"),
+        number_card,
+        board_container)
+        # ft.Row(
+        # controls=[board_container,input_group]))
+    
+
+ft.app(target=main,view=ft.WEB_BROWSER)

@@ -67,6 +67,7 @@ class Block:
         for chess in chesses:
             self.chesses.append(chess)
         self.count = {Color[0]:0,Color[1]:0}
+        self.color = None
     def update(self, piece):
         for chess in self.chesses:
             chess.remove(piece)
@@ -93,16 +94,13 @@ class Board:
         #     if chess.row == row and chess.col == col:
         #         chess.put(piece)    
         isPut=self.chesses[row*9+col].put(piece)
-        print(f"isPut: {isPut}")
         if isPut:
-            print(f"update row {row} col {col}")
-            print(f"update block {row//3}, {col//3}")
             self.rows[row].update(piece)
             self.cols[col].update(piece)
             self.block[row//3][col//3].update(piece)
     def hover(self, piece):
         for chess in self.chesses:
-            chess.accept_for_piece(piece)
+            chess.check(piece)
 
     def __repr__(self):
         # print chess value on chess's position
